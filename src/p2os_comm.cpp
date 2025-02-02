@@ -146,11 +146,11 @@ void P2OSCommunication::send_vel(int lin_vel, int ang_vel) {
     } else {
 #ifdef P2OS_INFO_PRINT
         this->debug_serial->printf(
-            "Info: speed demand thresholded! (true: %u, max: %u)\n", absSpeedDemand, motor_max_speed
+            "Info: speed demand thresholded! (current: %u, max: %u)\n", absSpeedDemand, this->motor_max_speed
         );
 #endif
-        motorcommand[2] = motor_max_speed & 0x00FF;
-        motorcommand[3] = (motor_max_speed & 0xFF00) >> 8;
+        motorcommand[2] = this->motor_max_speed & 0x00FF;
+        motorcommand[3] = (this->motor_max_speed & 0xFF00) >> 8;
     }
 
     motorpacket->Build(motorcommand, 4);
@@ -161,12 +161,15 @@ void P2OSCommunication::send_vel(int lin_vel, int ang_vel) {
 
     absturnRateDemand = static_cast<uint16_t>((ang_vel >= 0) ? ang_vel : (-1 * ang_vel));
 
-    if (absturnRateDemand <= motor_max_turnspeed) {
+    if (absturnRateDemand <= this->motor_max_turnspeed) {
         motorcommand[2] = absturnRateDemand & 0x00FF;
         motorcommand[3] = (absturnRateDemand & 0xFF00) >> 8;
     } else {
 #ifdef P2OS_INFO_PRINT
-        this->debug_serial->printf("Info: Turn rate demand threshholded!\n");
+        this->debug_serial->printf(
+            "Info: Turn rate demand threshholded! (current: %u, max: %u)\n", absturnRateDemand,
+            this->motor_max_turnspeed
+        );
 #endif
         motorcommand[2] = this->motor_max_turnspeed & 0x00FF;
         motorcommand[3] = (this->motor_max_turnspeed & 0xFF00) >> 8;

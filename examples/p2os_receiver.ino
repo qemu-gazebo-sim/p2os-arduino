@@ -6,9 +6,8 @@
 #define PIONEER_SERIAL_RX 16
 #define PIONEER_SERIAL_TX 17
 
-HardwareSerial debug_serial(0);    // define a Serial for UART0
-HardwareSerial pioneer_serial(2);  // define a Serial for UART2
-
+HardwareSerial            debug_serial(0);    // define a Serial for UART0
+HardwareSerial            pioneer_serial(2);  // define a Serial for UART2
 P2OS*                     p2os;
 uint32_t                  print_time;
 nav_msgs::ros_p2os_data_t current_data;
@@ -26,7 +25,14 @@ void setup() {
     }
 
     debug_serial.println("Ready!");
-    print_time = millis();
+}
+
+double check_value(double val) {
+    if (val > pow(2, 16)) {
+        return -1;
+    }
+
+    return val;
 }
 
 void loop() {
@@ -49,15 +55,20 @@ void loop() {
         int32_t            sonar_count = current_data.sonar.ranges_count;
         std::vector<float> sonar_data = current_data.sonar.ranges;
 
-        debug_serial.printf("Velocity Linear:\n\tx: %lf\n\t y:%lf\n\t z:%lf\n", vel_lin_x, vel_lin_y, vel_lin_z);
-
         debug_serial.printf(
-            "Velocity Angular:\n\tx: 0 \n\ty:%lf \n\tz:%lf\n",
-            // vel_ang_x,
-            vel_ang_y, vel_ang_z
+            "Velocity Linear:\n\tx: %.6lf\n\t y:%.6lf\n\t z:%.6lf\n", check_value(vel_lin_x), check_value(vel_lin_y),
+            check_value(vel_lin_z)
         );
 
-        debug_serial.printf("Position:\n\tx: %lf \n\ty:%lf \n\tz:%lf \n", pose_x, pose_y, pose_z);
+        debug_serial.printf(
+            "Velocity Angular:\n\tx: %.6lf \n\ty:%.6lf \n\tz:%.6lf\n", check_value(vel_ang_x), check_value(vel_ang_y),
+            check_value(vel_ang_z)
+        );
+
+        debug_serial.printf(
+            "Position:\n\tx: %.6lf \n\ty:%.6lf \n\tz:%.6lf \n", check_value(pose_x), check_value(pose_y),
+            check_value(pose_z)
+        );
 
         if (sonar_count >= 0) {
             String sonar_info;
