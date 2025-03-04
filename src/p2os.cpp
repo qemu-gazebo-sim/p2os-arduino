@@ -1,11 +1,11 @@
 #include "p2os.hpp"
-#include "p2os_config.hpp"
 #include <ArduinoLog.h>
 
-P2OS::P2OS(HardwareSerial& debug_serial, HardwareSerial& pioneer_serial) {
-    this->debug_serial = &debug_serial;
+#define PULSE_INTERVAL 0.5
+
+P2OS::P2OS(HardwareSerial& pioneer_serial) {
     this->pioneer_serial = &pioneer_serial;
-    this->p2os_comm = new P2OSCommunication(*(this->debug_serial), *(this->pioneer_serial));
+    this->p2os_comm = new P2OSCommunication(*(this->pioneer_serial));
 }
 
 P2OS::~P2OS() {

@@ -10,11 +10,10 @@ constexpr size_t packet_len = 256;
 
 class P2OSPacket {
 private:
-    HardwareSerial* debug_serial;
     HardwareSerial* pioneer_serial;
 
 public:
-    P2OSPacket(HardwareSerial& debug_serial, HardwareSerial& pioneer_serial);
+    P2OSPacket(HardwareSerial& pioneer_serial);
     ~P2OSPacket();
 
     void set_pioneer_serial(HardwareSerial& pioneer_serial);

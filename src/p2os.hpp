@@ -7,7 +7,7 @@
 
 class P2OS {
 public:
-    P2OS(HardwareSerial& debug_serial, HardwareSerial& pioneer_serial);
+    P2OS(HardwareSerial& pioneer_serial);
 
     ~P2OS();
 
@@ -24,7 +24,6 @@ public:
     void set_motor_state(p2os_msgs::MotorState* msg);
 
 protected:
-    HardwareSerial*    debug_serial;
     HardwareSerial*    pioneer_serial;
     P2OSCommunication* p2os_comm;
     uint32_t           last_time_pulse = 0;

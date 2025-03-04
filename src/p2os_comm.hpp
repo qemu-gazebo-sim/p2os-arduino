@@ -8,7 +8,6 @@
 
 class P2OSCommunication {
 private:
-    HardwareSerial* debug_serial;
     HardwareSerial* pioneer_serial;
     int             motor_max_speed;
     int             motor_max_turnspeed;
@@ -24,7 +23,7 @@ public:
     geometry_msgs::Twist      cmdvel_;
     p2os_msgs::MotorState     cmdmotor_state_;
 
-    P2OSCommunication(HardwareSerial& debug_serial, HardwareSerial& pioneer_serial);
+    P2OSCommunication(HardwareSerial& pioneer_serial);
     ~P2OSCommunication();
 
     double pulse;  //! Pulse time

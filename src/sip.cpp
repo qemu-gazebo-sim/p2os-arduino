@@ -1,4 +1,3 @@
-#include "p2os_config.hpp"
 #include <robot_params.hpp>
 #include <sip.hpp>
 #include <ArduinoLog.h>

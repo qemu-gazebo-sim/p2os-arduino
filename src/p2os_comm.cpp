@@ -1,11 +1,9 @@
-#include "p2os_config.hpp"
 #include "robot_params.hpp"
 #include <Arduino.h>
 #include <p2os_comm.hpp>
 #include <ArduinoLog.h>
 
-P2OSCommunication::P2OSCommunication(HardwareSerial& debug_serial, HardwareSerial& pioneer_serial) {
-    this->debug_serial = &debug_serial;
+P2OSCommunication::P2OSCommunication(HardwareSerial& pioneer_serial) {
     this->pioneer_serial = &pioneer_serial;
 
     // read in config options
@@ -69,7 +67,7 @@ void P2OSCommunication::send_motor_state(int state) {
     unsigned char command[4];
     // P2OSPacket packet;
     Log.verboseln("sending motor state signal (%d)", val);
-    P2OSPacket* packet = new P2OSPacket(*(this->debug_serial), *(this->pioneer_serial));
+    P2OSPacket* packet = new P2OSPacket(*(this->pioneer_serial));
     command[0] = ENABLE;
     command[1] = ARGINT;
     command[2] = val;
@@ -121,7 +119,7 @@ void P2OSCommunication::check_and_set_vel() {
 void P2OSCommunication::send_vel(int lin_vel, int ang_vel) {
     uint16_t      absSpeedDemand, absturnRateDemand;
     unsigned char motorcommand[4];
-    P2OSPacket*   motorpacket = new P2OSPacket(*(this->debug_serial), *(this->pioneer_serial));
+    P2OSPacket*   motorpacket = new P2OSPacket(*(this->pioneer_serial));
 
     // non-direct wheel control
     motorcommand[0] = VEL;
@@ -133,7 +131,7 @@ void P2OSCommunication::send_vel(int lin_vel, int ang_vel) {
         motorcommand[2] = absSpeedDemand & 0x00FF;
         motorcommand[3] = (absSpeedDemand & 0xFF00) >> 8;
     } else {
-        Log.infoln("speed demand thresholded! (current: %u, max: %u)", absSpeedDemand, this->motor_max_speed);
+        Log.infoln("speed demand thresholded! (current: %d, max: %d)", absSpeedDemand, this->motor_max_speed);
         motorcommand[2] = this->motor_max_speed & 0x00FF;
         motorcommand[3] = (this->motor_max_speed & 0xFF00) >> 8;
     }
@@ -151,7 +149,7 @@ void P2OSCommunication::send_vel(int lin_vel, int ang_vel) {
         motorcommand[3] = (absturnRateDemand & 0xFF00) >> 8;
     } else {
         Log.infoln(
-            "Info: Turn rate demand threshholded! (current: %u, max: %u)", absturnRateDemand, this->motor_max_turnspeed
+            "Info: Turn rate demand threshholded! (current: %d, max: %d)", absturnRateDemand, this->motor_max_turnspeed
         );
         motorcommand[2] = this->motor_max_turnspeed & 0x00FF;
         motorcommand[3] = (this->motor_max_turnspeed & 0xFF00) >> 8;
@@ -174,9 +172,9 @@ int P2OSCommunication::Setup() {
 
     // struct termios term;
     unsigned char command;
-    P2OSPacket*   packet = new P2OSPacket(*(this->debug_serial), *(this->pioneer_serial));
+    P2OSPacket*   packet = new P2OSPacket(*(this->pioneer_serial));
 
-    P2OSPacket* receivedpacket = new P2OSPacket(*(this->debug_serial), *(this->pioneer_serial));
+    P2OSPacket* receivedpacket = new P2OSPacket(*(this->pioneer_serial));
 
     // int flags = 0;
     bool sent_close = false;
@@ -344,7 +342,7 @@ int P2OSCommunication::Setup() {
     }
 
     if (!sippacket) {
-        sippacket = new SIP(param_idx, *(this->debug_serial));
+        sippacket = new SIP(param_idx);
         sippacket->odom_frame_id = odom_frame_id;
         sippacket->base_link_frame_id = base_link_frame_id;
     }
@@ -356,7 +354,7 @@ int P2OSCommunication::Setup() {
     // */
     // turn off the sonars at first
     // this->ToggleSonarPower(0);
-    P2OSPacket*   accel_packet = new P2OSPacket(*(this->debug_serial), *(this->pioneer_serial));
+    P2OSPacket*   accel_packet = new P2OSPacket(*(this->pioneer_serial));
     unsigned char accel_command[4];
     if (this->motor_max_trans_accel > 0) {
         accel_command[0] = SETA;
@@ -397,7 +395,7 @@ int P2OSCommunication::Setup() {
     delete accel_packet;
 
     // if requested, change PID settings
-    P2OSPacket*   pid_packet = new P2OSPacket(*(this->debug_serial), *(this->pioneer_serial));
+    P2OSPacket*   pid_packet = new P2OSPacket(*(this->pioneer_serial));
     unsigned char pid_command[4];
     if (this->rot_kp >= 0) {
         pid_command[0] = ROTKP;
@@ -460,7 +458,7 @@ int P2OSCommunication::Setup() {
 
 int P2OSCommunication::Shutdown() {
     unsigned char command[20], buffer[20];
-    P2OSPacket*   packet_shutdown = new P2OSPacket(*(this->debug_serial), *(this->pioneer_serial));
+    P2OSPacket*   packet_shutdown = new P2OSPacket(*(this->pioneer_serial));
 
     // if (ptz_.isOn()) {
     //     ptz_.shutdown();
@@ -494,7 +492,7 @@ int P2OSCommunication::Shutdown() {
 
 /* send the packet, then receive and parse an SIP */
 int P2OSCommunication::SendReceive(P2OSPacket* pkt, bool publish_data) {
-    P2OSPacket* packet_send_recieve = new P2OSPacket(*(this->debug_serial), *(this->pioneer_serial));
+    P2OSPacket* packet_send_recieve = new P2OSPacket(*(this->pioneer_serial));
 
     //   if ((this->psos_fd >= 0) && this->sippacket) {
     if (pkt) {
@@ -552,7 +550,7 @@ int P2OSCommunication::SendReceive(P2OSPacket* pkt, bool publish_data) {
 
 void P2OSCommunication::ToggleSonarPower(unsigned char val) {
     unsigned char command[4];
-    P2OSPacket*   sonar_power_packet = new P2OSPacket(*(this->debug_serial), *(this->pioneer_serial));
+    P2OSPacket*   sonar_power_packet = new P2OSPacket(*(this->pioneer_serial));
 
     command[0] = SONAR;
     command[1] = ARGINT;
@@ -594,7 +592,7 @@ void P2OSCommunication::ToggleSonarPower(unsigned char val) {
 
 void P2OSCommunication::SendPulse(void) {
     unsigned char command;
-    P2OSPacket*   send_pulse_packet = new P2OSPacket(*(this->debug_serial), *(this->pioneer_serial));
+    P2OSPacket*   send_pulse_packet = new P2OSPacket(*(this->pioneer_serial));
 
     command = PULSE;
     send_pulse_packet->Build(&command, 1);
@@ -604,7 +602,7 @@ void P2OSCommunication::SendPulse(void) {
 }
 
 void P2OSCommunication::ResetRawPositions() {
-    P2OSPacket*   pkt = new P2OSPacket(*(this->debug_serial), *(this->pioneer_serial));
+    P2OSPacket*   pkt = new P2OSPacket(*(this->pioneer_serial));
     unsigned char p2oscommand[4];
 
     if (this->sippacket) {

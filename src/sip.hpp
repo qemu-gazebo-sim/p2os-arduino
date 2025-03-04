@@ -31,7 +31,6 @@ private:
     int param_idx;  // index of our robot's data in the parameter table
 
 public:
-    HardwareSerial* debug_serial;
     // these values are returned in every standard SIP
     bool          lwstall, rwstall;
     unsigned char motors_enabled, sonar_flag;
@@ -88,7 +87,7 @@ public:
     // void FillGyro(player_p2os_data_t* data);
     // void FillArm(player_p2os_data_t* data);
 
-    explicit SIP(int idx, HardwareSerial& debug_serial) :
+    explicit SIP(int idx) :
         param_idx(idx),
         sonarreadings(0),
         sonars(NULL),
@@ -117,7 +116,6 @@ public:
             armJointPosRads[i] = 0;
             armJointTargetPos[i] = 0;
         }
-        this->debug_serial = &debug_serial;
         armVersionString = new char[strlen("") + 1];
         strcpy(armVersionString, "");
     }

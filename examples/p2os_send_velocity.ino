@@ -19,7 +19,7 @@ void setup() {
 
     Log.begin(LOG_LEVEL_INFO, &debug_serial);
 
-    p2os = new P2OS(debug_serial, pioneer_serial);
+    p2os = new P2OS(pioneer_serial);
 
     Log.infoln("Ready!");
 }
@@ -72,5 +72,7 @@ void loop() {
         msg_vel.linear.x = 0;
         msg_vel.angular.z = 0;
         p2os->set_vel(&msg_vel);
+        Log.infoln("Done");
+        sleep(1);
     }
 }

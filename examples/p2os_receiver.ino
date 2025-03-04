@@ -21,7 +21,7 @@ void setup() {
 
     Log.begin(LOG_LEVEL_INFO, &debug_serial);
 
-    p2os = new P2OS(debug_serial, pioneer_serial);
+    p2os = new P2OS(pioneer_serial);
     
     while (p2os->setup()) {
         Log.infoln("p2os setup failed...");

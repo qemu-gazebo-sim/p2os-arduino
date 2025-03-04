@@ -1,10 +1,8 @@
-#include "p2os_config.hpp"
 #include <Arduino.h>
 #include <packet.hpp>
 #include <ArduinoLog.h>
 
-P2OSPacket::P2OSPacket(HardwareSerial& debug_serial, HardwareSerial& pioneer_serial) {
-    this->debug_serial = &debug_serial;
+P2OSPacket::P2OSPacket(HardwareSerial& pioneer_serial) {
     this->pioneer_serial = &pioneer_serial;
 }
 
@@ -91,16 +89,14 @@ int P2OSPacket::Receive() {
                     // retries_1--;
                     cnt = 0;
                     if (retries_1 < 1) {
-                        Log.errorln("Error: timout reading packet.header from robot connection: "
-                                    "P2OSPacket():Receive():read()");
+                        Log.errorln(
+                            "P2OSPacket():Receive():read(): timout reading packet.header from robot connection: "
+                        );
                         return 1;
                     }
                 }
-                // this->debug_serial->printf("%i \n", read_result);
             }
 
-            // this->debug_serial->printf("%i", prefix[2]);
-            // this->debug_serial->println("Receive 3");
             if (prefix[0] == 0xFA && prefix[1] == 0xFB) {
                 break;
             }
