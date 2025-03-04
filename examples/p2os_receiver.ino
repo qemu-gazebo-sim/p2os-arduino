@@ -1,7 +1,5 @@
-#include <Arduino.h>
 #include <p2os.hpp>
 #include <HardwareSerial.h>
-#include <vector>
 #include <ArduinoLog.h>
 
 #define PIONEER_SERIAL_RX 16

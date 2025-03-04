@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <p2os.hpp>
 #include <HardwareSerial.h>
 #include <ArduinoLog.h>
