@@ -2,6 +2,7 @@
 #include "robot_params.hpp"
 #include <Arduino.h>
 #include <p2os_comm.hpp>
+#include <ArduinoLog.h>
 
 P2OSCommunication::P2OSCommunication(HardwareSerial& debug_serial, HardwareSerial& pioneer_serial) {
     this->debug_serial = &debug_serial;
@@ -42,9 +43,8 @@ P2OSCommunication::P2OSCommunication(HardwareSerial& debug_serial, HardwareSeria
     this->cmdmotor_state_ = p2os_msgs::MotorState();  // initilize cmdmotor_state_
 
     initialize_robot_params();
-#ifdef P2OS_DEBUG_PRINT
-    this->debug_serial->println("Info: P2OSCommunication setted");
-#endif
+
+    Log.verboseln("P2OSCommunication setted");
 }
 
 P2OSCommunication::~P2OSCommunication() { /** Destructor **/ }
@@ -67,10 +67,8 @@ void P2OSCommunication::check_and_set_motor_state() {
 void P2OSCommunication::send_motor_state(int state) {
     unsigned char val = static_cast<unsigned char>(state);
     unsigned char command[4];
-// P2OSPacket packet;
-#ifdef P2OS_DEBUG_PRINT
-    this->debug_serial->printf("debug: sending motor state signal (%d)\n", val);
-#endif
+    // P2OSPacket packet;
+    Log.verboseln("sending motor state signal (%d)", val);
     P2OSPacket* packet = new P2OSPacket(*(this->debug_serial), *(this->pioneer_serial));
     command[0] = ENABLE;
     command[1] = ARGINT;
@@ -90,22 +88,15 @@ void P2OSCommunication::send_motor_state(int state) {
 void P2OSCommunication::cmdvel_cb(geometry_msgs::Twist* msg) {
     if (fabs(msg->linear.x - cmdvel_.linear.x) > 0.01 || fabs(msg->angular.z - cmdvel_.angular.z) > 0.01) {
         this->veltime = millis();
-#ifdef P2OS_DEBUG_PRINT
-        this->debug_serial->printf(
-            "debug: new speed: [%0.2f,%0.2f](%0.3f)\n", msg->linear.x * 1e3, msg->angular.z,
-            this->millis2Sec(this->veltime)
-        );
-#endif
+        Log.verboseln("new speed: [%D, %D](%D)", msg->linear.x * 1e3, msg->angular.z, this->millis2Sec(this->veltime));
         this->vel_dirty = true;
         this->cmdvel_ = *msg;
     } else {
         uint32_t veldur = millis() - this->veltime;
         if (this->millis2Sec(veldur) > 2.0 && ((fabs(cmdvel_.linear.x) > 0.01) || (fabs(cmdvel_.angular.z) > 0.01))) {
-#ifdef P2OS_DEBUG_PRINT
-            this->debug_serial->printf(
-                "debug: maintaining old speed: %0.3f|%0.3f", this->millis2Sec(this->veltime), this->millis2Sec(millis())
+            Log.verboseln(
+                "maintaining old speed: %D | %D", this->millis2Sec(this->veltime), this->millis2Sec(millis())
             );
-#endif
             this->vel_dirty = true;
             this->veltime = millis();
         }
@@ -117,9 +108,7 @@ void P2OSCommunication::check_and_set_vel() {
         return;
     }
 
-#ifdef P2OS_DEBUG_PRINT
-    this->debug_serial->printf("debug: setting vel: [%0.2f,%0.2f]\n", cmdvel_.linear.x, cmdvel_.angular.z);
-#endif
+    Log.verboseln("setting vel: [%D,%D]", cmdvel_.linear.x, cmdvel_.angular.z);
 
     vel_dirty = false;
 
@@ -144,11 +133,7 @@ void P2OSCommunication::send_vel(int lin_vel, int ang_vel) {
         motorcommand[2] = absSpeedDemand & 0x00FF;
         motorcommand[3] = (absSpeedDemand & 0xFF00) >> 8;
     } else {
-#ifdef P2OS_INFO_PRINT
-        this->debug_serial->printf(
-            "Info: speed demand thresholded! (current: %u, max: %u)\n", absSpeedDemand, this->motor_max_speed
-        );
-#endif
+        Log.infoln("speed demand thresholded! (current: %u, max: %u)", absSpeedDemand, this->motor_max_speed);
         motorcommand[2] = this->motor_max_speed & 0x00FF;
         motorcommand[3] = (this->motor_max_speed & 0xFF00) >> 8;
     }
@@ -165,12 +150,9 @@ void P2OSCommunication::send_vel(int lin_vel, int ang_vel) {
         motorcommand[2] = absturnRateDemand & 0x00FF;
         motorcommand[3] = (absturnRateDemand & 0xFF00) >> 8;
     } else {
-#ifdef P2OS_INFO_PRINT
-        this->debug_serial->printf(
-            "Info: Turn rate demand threshholded! (current: %u, max: %u)\n", absturnRateDemand,
-            this->motor_max_turnspeed
+        Log.infoln(
+            "Info: Turn rate demand threshholded! (current: %u, max: %u)", absturnRateDemand, this->motor_max_turnspeed
         );
-#endif
         motorcommand[2] = this->motor_max_turnspeed & 0x00FF;
         motorcommand[3] = (this->motor_max_turnspeed & 0xFF00) >> 8;
     }
@@ -212,17 +194,13 @@ int P2OSCommunication::Setup() {
     int  cnt;
 
     if (!this->pioneer_serial) {
-#ifdef P2OS_ERROR_PRINT
-        this->debug_serial->println("Error: Serial port initialization failed.");
-#endif
+        Log.errorln("Serial port initialization failed.");
         while (true)
             ;
     }
 
     this->pioneer_serial->updateBaudRate(bauds[currbaud]);
-#ifdef P2OS_INFO_PRINT
-    this->debug_serial->printf("Info: P2OS connection serial with baudrate %i... \n", bauds[currbaud]);
-#endif
+    Log.infoln("P2OS connection serial with baudrate %i...", bauds[currbaud]);
     packet->set_pioneer_serial(*(this->pioneer_serial));
     receivedpacket->set_pioneer_serial(*(this->pioneer_serial));
 
@@ -232,19 +210,15 @@ int P2OSCommunication::Setup() {
     while (psos_state != READY) {
         switch (psos_state) {
             case NO_SYNC:
-#ifdef P2OS_DEBUG_PRINT
-                this->debug_serial->println("NO_SYNC");
-#endif
+                Log.traceln("NO_SYNC");
                 command = SYNC0;
                 packet->Build(&command, 1);
                 packet->Send();
                 delay(200);  // delayMicroseconds(P2OS_CYCLETIME_USEC);
                 break;
             case AFTER_FIRST_SYNC:
-#ifdef P2OS_INFO_PRINT
-                this->debug_serial->println("AFTER_FIRST_SYNC");
-                this->debug_serial->println("Info: turning off NONBLOCK mode...");
-#endif
+                Log.traceln("AFTER_FIRST_SYNC");
+                Log.traceln("Info: turning off NONBLOCK mode...");
                 // if (!this->pioneer_serial->available()) {
                 //     this->debug_serial->println("Error: P2OS::Setup():fcntl()");
                 //     this->psos_fd = -1;
@@ -256,18 +230,14 @@ int P2OSCommunication::Setup() {
                 delay(200);  // delayMicroseconds(P2OS_CYCLETIME_USEC);
                 break;
             case AFTER_SECOND_SYNC:
-#ifdef P2OS_DEBUG_PRINT
-                this->debug_serial->println("AFTER_SECOND_SYNC");
-#endif
+                Log.traceln("AFTER_SECOND_SYNC");
                 command = SYNC2;
                 packet->Build(&command, 1);
                 packet->Send();
                 delay(200);
                 break;
             default:
-#ifdef P2OS_INFO_PRINT
-                this->debug_serial->println("P2OS::Setup():shouldn't be here... \n");
-#endif
+                Log.traceln("P2OS::Setup():shouldn't be here...");
                 break;
         }
         delay(200);  // delayMicroseconds(P2OS_CYCLETIME_USEC);
@@ -279,9 +249,7 @@ int P2OSCommunication::Setup() {
                 continue;
             } else {
                 if (++currbaud < numbauds) {
-#ifdef P2OS_INFO_PRINT
-                    this->debug_serial->printf("Info: P2OS connection serial with baudrate %i... \n", bauds[currbaud]);
-#endif
+                    Log.infoln("P2OS connection serial with baudrate %i...", bauds[currbaud]);
                     this->pioneer_serial->updateBaudRate(bauds[currbaud]);
                     this->pioneer_serial->flush();
 
@@ -298,33 +266,23 @@ int P2OSCommunication::Setup() {
 
         switch (receivedpacket->packet[3]) {
             case SYNC0:
-#ifdef P2OS_DEBUG_PRINT
-                this->debug_serial->println("SYNC0");
-#endif
+                Log.traceln("SYNC0");
                 psos_state = AFTER_FIRST_SYNC;
                 break;
             case SYNC1:
-#ifdef P2OS_DEBUG_PRINT
-                this->debug_serial->println("SYNC1");
-#endif
+                Log.traceln("SYNC1");
                 psos_state = AFTER_SECOND_SYNC;
                 break;
             case SYNC2:
-#ifdef P2OS_DEBUG_PRINT
-                this->debug_serial->println("SYNC2");
-#endif
+                Log.traceln("SYNC2");
                 psos_state = READY;
                 break;
             default:
                 // maybe P2OS is still running from last time.  let's try to CLOSE
                 // and reconnect
-#ifdef P2OS_DEBUG_PRINT
-                this->debug_serial->println("switch (receivedpacket->packet[3]) default state");
-#endif
+                Log.traceln("switch (receivedpacket->packet[3]) default state");
                 if (!sent_close) {
-#ifdef P2OS_DEBUG_PRINT
-                    this->debug_serial->println("sending CLOSE");
-#endif
+                    Log.verboseln("sending CLOSE");
                     command = CLOSE;
                     packet->Build(&command, 1);
                     packet->Send();
@@ -369,26 +327,19 @@ int P2OSCommunication::Setup() {
     packet->Send();
     delay(200);  // delayMicroseconds(P2OS_CYCLETIME_USEC);
 
-#ifdef P2OS_INFO_PRINT
-    this->debug_serial->println("Done.");
-    this->debug_serial->printf("-> Connected to:\n  name: %s, type: %s, subtype: %s\n", name, type, subtype);
-#endif
+    Log.infoln("-> Connected to:\n  name: %s, type: %s, subtype: %s", name, type, subtype);
     // now, based on robot type, find the right set of parameters
     for (i = 0; i < PLAYER_NUM_ROBOT_TYPES; i++) {
         if (!strcasecmp(PlayerRobotParams[i].Class.c_str(), type) &&
             !strcasecmp(PlayerRobotParams[i].Subclass.c_str(), subtype)) {
             param_idx = i;
-#ifdef P2OS_INFO_PRINT
-            this->debug_serial->printf("Robot index: %d\n", param_idx);
-#endif
+            Log.verboseln("Robot index: %d", param_idx);
             break;
         }
     }
     if (i == PLAYER_NUM_ROBOT_TYPES) {
-#ifdef P2OS_INFO_PRINT
-        this->debug_serial->println("P2OS: Warning: couldn't find parameters for this robot; ");
-        this->debug_serial->println("using defaults");
-#endif
+        Log.infoln("P2OS: Warning: couldn't find parameters for this robot");
+        Log.infoln("using defaults");
         param_idx = 0;
     }
 
@@ -531,11 +482,9 @@ int P2OSCommunication::Shutdown() {
     packet_shutdown->Send();
     delay(200);  // usleep(P2OS_CYCLETIME_USEC);
 
-// close(this->psos_fd);
-// this->psos_fd = -1;
-#ifdef P2OS_INFO_PRINT
-    this->debug_serial->println("P2OS has been shutdown");
-#endif
+    // close(this->psos_fd);
+    // this->psos_fd = -1;
+    Log.infoln("P2OS has been shutdown");
     delete this->sippacket;
     this->sippacket = NULL;
 
@@ -555,9 +504,7 @@ int P2OSCommunication::SendReceive(P2OSPacket* pkt, bool publish_data) {
     /* receive a packet */
     // pthread_testcancel();
     if (packet_send_recieve->Receive()) {
-#ifdef P2OS_ERROR_PRINT
-        this->debug_serial->printf("RunPsosThread(): Receive errored\n");
-#endif
+        Log.errorln("RunPsosThread(): Receive errored");
         //   pthread_exit(NULL);
     }
 
@@ -570,11 +517,8 @@ int P2OSCommunication::SendReceive(P2OSPacket* pkt, bool publish_data) {
          packet_send_recieve->packet[3] == SERAUX);
 
     if (packet_check) {
-/* It is a server packet, so process it */
-#ifdef P2OS_DEBUG_PRINT
-        this->debug_serial->println("Received packet!");
-#endif
-
+        /* It is a server packet, so process it */
+        Log.verboseln("Received packet!");
         this->sippacket->ParseStandard(&packet_send_recieve->packet[3]);
         this->sippacket->FillStandard(&(this->p2os_data));
 
@@ -582,9 +526,7 @@ int P2OSCommunication::SendReceive(P2OSPacket* pkt, bool publish_data) {
         //     this->StandardSIPPutData(packet.timestamp);
         //   }
     } else if (ser_aux) {
-#ifdef P2OS_DEBUG_PRINT
-        this->debug_serial->println("Received ser_aux packet!");
-#endif
+        Log.verboseln("Received ser_aux packet!");
         // This is an AUX serial packet
 
         //   if (ptz_.isOn()) {
@@ -599,9 +541,7 @@ int P2OSCommunication::SendReceive(P2OSPacket* pkt, bool publish_data) {
         //   }
 
     } else {
-#ifdef P2OS_DEBUG_PRINT
-        this->debug_serial->println("Received other packet!");
-#endif
+        Log.verboseln("Received other packet!");
         packet_send_recieve->PrintHex();
     }
     //   }
@@ -677,9 +617,7 @@ void P2OSCommunication::ResetRawPositions() {
         pkt->Build(p2oscommand, 2);
         this->SendReceive(pkt, false);
 
-#ifdef P2OS_INFO_PRINT
-        this->debug_serial->println("resetting raw positions");
-#endif
+        Log.traceln("resetting raw positions");
 
         delete pkt;
     }

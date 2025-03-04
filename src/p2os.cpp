@@ -1,5 +1,6 @@
 #include "p2os.hpp"
 #include "p2os_config.hpp"
+#include <ArduinoLog.h>
 
 P2OS::P2OS(HardwareSerial& debug_serial, HardwareSerial& pioneer_serial) {
     this->debug_serial = &debug_serial;
@@ -13,11 +14,11 @@ P2OS::~P2OS() {
 
 int P2OS::setup() {
     if (this->p2os_comm->Setup()) {
-#ifdef P2OS_ERROR_PRINT
-        this->debug_serial->println("error: p2os setup failed...");
-#endif
+        Log.errorln("p2os setup failed...");
         return -1;
     }
+
+    Log.traceln("p2os_constructor");
 
     this->p2os_comm->ResetRawPositions();
     this->last_time_pulse = millis();
@@ -28,9 +29,7 @@ int P2OS::setup() {
 
 int P2OS::shutdown() {
     if (this->p2os_comm->Shutdown()) {
-#ifdef P2OS_ERROR_PRINT
-        this->debug_serial->println("error: p2os shutdown failed...");
-#endif
+        Log.errorln("p2os shutdown failed...");
         return -1;
     }
 
@@ -45,9 +44,7 @@ void P2OS::loop() {
 
     if (this->p2os_comm->get_pulse() > 0) {
         if (this->p2os_comm->millis2Sec(this->current_time - this->last_time_pulse) > this->p2os_comm->get_pulse()) {
-#ifdef P2OS_DEBUG_PRINT
-            this->debug_serial->println("sending pulse");
-#endif
+            Log.verboseln("sending pulse");
             this->p2os_comm->SendPulse();
             this->last_time_pulse = this->current_time;
         }

@@ -1,6 +1,7 @@
 #include "p2os_config.hpp"
 #include <Arduino.h>
 #include <packet.hpp>
+#include <ArduinoLog.h>
 
 P2OSPacket::P2OSPacket(HardwareSerial& debug_serial, HardwareSerial& pioneer_serial) {
     this->debug_serial = &debug_serial;
@@ -14,25 +15,29 @@ void P2OSPacket::set_pioneer_serial(HardwareSerial& pioneer_serial) {
 }
 
 void P2OSPacket::Print() {
-#ifdef P2OS_DEBUG_PRINT
-    if (this->packet) {
-        for (int i = 0; i < this->size; i++) {
-            this->debug_serial->printf("%u ", packet[i]);
+    if (Log.getLevel() == LOG_LEVEL_VERBOSE) {
+        Log.setShowLevel(false);
+        if (this->packet) {
+            for (int i = 0; i < this->size; i++) {
+                Log.verbose("%u ", packet[i]);
+            }
+            Log.verbose("\n");
         }
-        this->debug_serial->printf("\n");
+        Log.setShowLevel(true);
     }
-#endif
 }
 
 void P2OSPacket::PrintHex() {
-#ifdef P2OS_DEBUG_PRINT
-    if (this->packet) {
-        for (int i = 0; i < this->size; i++) {
-            this->debug_serial->printf("0x%.2x ", packet[i]);
+    if (Log.getLevel() == LOG_LEVEL_VERBOSE) {
+        Log.setShowLevel(false);
+        if (this->packet) {
+            for (int i = 0; i < this->size; i++) {
+                Log.verbose("%X ", packet[i]);
+            }
+            Log.verbose("\n");
         }
-        this->debug_serial->printf("\n");
+        Log.setShowLevel(true);
     }
-#endif
 }
 
 bool P2OSPacket::Check() {
@@ -78,21 +83,16 @@ int P2OSPacket::Receive() {
                     read_result = this->pioneer_serial->read(&prefix[2], 1);
                     cnt += read_result;
                     if (cnt < 0) {
-#ifdef P2OS_ERROR_PRINT
-                        this->debug_serial->printf(
-                            "Error: error reading packet.header from robot connection: P2OSPacket():Receive():read():\n"
+                        Log.errorln("error reading packet.header from robot connection: P2OSPacket():Receive():read():"
                         );
-#endif
                         return 1;
                     }
                 } else {
                     // retries_1--;
                     cnt = 0;
                     if (retries_1 < 1) {
-#ifdef P2OS_ERROR_PRINT
-                        this->debug_serial->printf("Error: timout reading packet.header from robot connection: "
-                                                   "P2OSPacket():Receive():read():\n");
-#endif
+                        Log.errorln("Error: timout reading packet.header from robot connection: "
+                                    "P2OSPacket():Receive():read()");
                         return 1;
                     }
                 }
@@ -110,9 +110,7 @@ int P2OSPacket::Receive() {
 
             retries_0--;
             if (retries_0 < 0) {
-#ifdef P2OS_ERROR_PRINT
-                this->debug_serial->printf("Error: timout retried: P2OSPacket():Receive():read():\n");
-#endif
+                Log.errorln("timout retried: P2OSPacket():Receive():read():");
                 return 1;
             }
         }
@@ -128,25 +126,15 @@ int P2OSPacket::Receive() {
                 cnt += read_result;
 
                 if (cnt < 0) {
-#ifdef P2OS_ERROR_PRINT
-                    this->debug_serial->printf(
-                        "Error reading packet body from robot connection: P2OSPacket():Receive():read():\n"
-                    );
-#endif
+                    Log.errorln("Error reading packet body from robot connection: P2OSPacket():Receive():read():");
                     return 1;
                 }
             } else {
-#ifdef P2OS_ERROR_PRINT
-                this->debug_serial->printf(
-                    "Error: reading packet.body from robot connection: P2OSPacket():Receive():read():\n"
-                );
-#endif
+                Log.verboseln("reading packet.body from robot connection: P2OSPacket():Receive():read():");
             }
         }
-#ifdef P2OS_DEBUG_PRINT
-        this->debug_serial->println("Received:");
+        Log.verboseln("Received:");
         this->PrintHex();
-#endif
     } while (!Check());
 
     return 0;
@@ -162,9 +150,7 @@ int P2OSPacket::Build(unsigned char* data, unsigned char datasize) {
     this->packet[1] = 0xFB;
 
     if (this->size > 198) {
-#ifdef P2OS_ERROR_PRINT
-        this->debug_serial->printf("Error: Packet to P2OS can't be larger than 200 bytes\n");
-#endif
+        Log.errorln("Packet to P2OS can't be larger than 200 bytes");
         return 1;
     }
     this->packet[2] = datasize + 2;
@@ -176,9 +162,7 @@ int P2OSPacket::Build(unsigned char* data, unsigned char datasize) {
     this->packet[3 + datasize + 1] = chksum & 0xFF;
 
     if (!Check()) {
-#ifdef P2OS_ERROR_PRINT
-        this->debug_serial->printf("Error: DAMN\n");
-#endif
+        Log.errorln("DAMN! packet built problem\n");
         return 1;
     }
     return 0;
@@ -192,22 +176,16 @@ int P2OSPacket::Send() {
             int read_result = this->pioneer_serial->write(this->packet, this->size);
             cnt += read_result;
             if (cnt < 0) {
-#ifdef P2OS_ERROR_PRINT
-                this->debug_serial->println("Error: Send");
-#endif
+                Log.errorln("Send");
                 return 1;
             }
         } else {
-#ifdef P2OS_DEBUG_PRINT
-            this->debug_serial->println("Not available to write");
-#endif
+            Log.verboseln("Not available to write");
         }
     }
     this->pioneer_serial->flush(true);
 
-#ifdef P2OS_DEBUG_PRINT
-    this->debug_serial->println("Sent:");
+    Log.verboseln("Sent:");
     this->Print();
-#endif
     return 0;
 }

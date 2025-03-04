@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <p2os.hpp>
 #include <HardwareSerial.h>
+#include <ArduinoLog.h>
 
 #define PIONEER_SERIAL_RX 16
 #define PIONEER_SERIAL_TX 17
@@ -16,9 +17,11 @@ void setup() {
     debug_serial.flush();
     pioneer_serial.flush();
 
+    Log.begin(LOG_LEVEL_INFO, &debug_serial);
+
     p2os = new P2OS(debug_serial, pioneer_serial);
 
-    debug_serial.println("Ready!");
+    Log.infoln("Ready!");
 }
 
 bool update_velocity(unsigned long loop_time, geometry_msgs::Twist* velocity) {
@@ -61,7 +64,7 @@ void loop() {
             last_time_motor_state = millis();
         }
 
-        debug_serial.printf("current_loop_time: %ld \n", (millis() - current_loop_time));
+        Log.infoln("current_loop_time: %d", (millis() - current_loop_time));
         current_loop_time = millis();
     }
 

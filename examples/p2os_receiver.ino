@@ -2,6 +2,7 @@
 #include <p2os.hpp>
 #include <HardwareSerial.h>
 #include <vector>
+#include <ArduinoLog.h>
 
 #define PIONEER_SERIAL_RX 16
 #define PIONEER_SERIAL_TX 17
@@ -18,13 +19,15 @@ void setup() {
     debug_serial.flush();
     pioneer_serial.flush();
 
-    p2os = new P2OS(debug_serial, pioneer_serial);
+    Log.begin(LOG_LEVEL_INFO, &debug_serial);
 
+    p2os = new P2OS(debug_serial, pioneer_serial);
+    
     while (p2os->setup()) {
-        debug_serial.println("p2os setup failed...");
+        Log.infoln("p2os setup failed...");
     }
 
-    debug_serial.println("Ready!");
+    Log.infoln("Ready!");
 }
 
 double check_value(double val) {
@@ -55,18 +58,24 @@ void loop() {
         int32_t            sonar_count = current_data.sonar.ranges_count;
         std::vector<float> sonar_data = current_data.sonar.ranges;
 
-        debug_serial.printf(
-            "Velocity Linear:\n\tx: %.6lf\n\t y:%.6lf\n\t z:%.6lf\n", check_value(vel_lin_x), check_value(vel_lin_y),
+        Log.infoln(
+            "Velocity Linear:\n\tx: %D\n\t y: %D\n\t z: %D", 
+            check_value(vel_lin_x), 
+            check_value(vel_lin_y),
             check_value(vel_lin_z)
         );
 
-        debug_serial.printf(
-            "Velocity Angular:\n\tx: %.6lf \n\ty:%.6lf \n\tz:%.6lf\n", check_value(vel_ang_x), check_value(vel_ang_y),
+        Log.infoln(
+            "Velocity Angular:\n\tx: %D \n\ty: %D \n\tz: %D", 
+            check_value(vel_ang_x), 
+            check_value(vel_ang_y),
             check_value(vel_ang_z)
         );
 
-        debug_serial.printf(
-            "Position:\n\tx: %.6lf \n\ty:%.6lf \n\tz:%.6lf \n", check_value(pose_x), check_value(pose_y),
+        Log.infoln(
+            "Position:\n\tx: %D \n\ty: %D \n\tz: %D", 
+            check_value(pose_x), 
+            check_value(pose_y),
             check_value(pose_z)
         );
 
@@ -76,7 +85,7 @@ void loop() {
                 sonar_info += " ";
                 sonar_info += static_cast<int>(sonar_data[i]);
             }
-            debug_serial.printf("Sonars: %s\n", sonar_info.c_str());
+            Log.infoln("Sonars: %s\n", sonar_info.c_str());
         }
 
         print_time = millis();

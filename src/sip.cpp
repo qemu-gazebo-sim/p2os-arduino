@@ -1,6 +1,7 @@
 #include "p2os_config.hpp"
 #include <robot_params.hpp>
 #include <sip.hpp>
+#include <ArduinoLog.h>
 
 void SIP::FillStandard(nav_msgs::ros_p2os_data_t* data) {
     ///////////////////////////////////////////////////////////////
@@ -199,94 +200,99 @@ int SIP::PositionChange(uint16_t from, uint16_t to) {
 }
 
 void SIP::Print() {
-#ifdef P2OS_DEBUG_PRINT
-    int i;
+    if (Log.getLevel() == LOG_LEVEL_VERBOSE) {
+        int i;
 
-    this->debug_serial->printf("debug: lwstall:%d rwstall:%d\n", lwstall, rwstall);
+        Log.verboseln("lwstall:%d rwstall:%d", lwstall, rwstall);
 
-    String front_bumper_info = "";
-    for (int i = 0; i < 5; i++) {
-        front_bumper_info += " ";
-        front_bumper_info += String((frontbumpers >> i) & 0x01);
-        // front_bumper_info << " " <<
-        // static_cast<int>((frontbumpers >> i) & 0x01 );
-    }
-    this->debug_serial->printf("debug: Front bumpers:%s\n", front_bumper_info.c_str());
+        String front_bumper_info = "";
+        for (int i = 0; i < 5; i++) {
+            front_bumper_info += " ";
+            front_bumper_info += String((frontbumpers >> i) & 0x01);
+            // front_bumper_info << " " <<
+            // static_cast<int>((frontbumpers >> i) & 0x01 );
+        }
+        Log.verboseln("Front bumpers:%s", front_bumper_info.c_str());
 
-    String rear_bumper_info = "";
-    for (int i = 0; i < 5; i++) {
-        rear_bumper_info += " ";
-        rear_bumper_info += String((rearbumpers >> i) & 0x01);
-    }
-    this->debug_serial->printf("debug: Rear bumpers:%s\n", rear_bumper_info.c_str());
+        String rear_bumper_info = "";
+        for (int i = 0; i < 5; i++) {
+            rear_bumper_info += " ";
+            rear_bumper_info += String((rearbumpers >> i) & 0x01);
+        }
+        Log.verboseln("Rear bumpers:%s", rear_bumper_info.c_str());
 
-    this->debug_serial->printf("debug: status: 0x%x analog: %d param_id: %d ", status, analog, param_idx);
-    String status_info = "";
-    for (i = 0; i < 11; i++) {
-        status_info += " ";
-        status_info += String((status >> (7 - i)) & 0x01);
-    }
-    this->debug_serial->printf("debug: status:%s\n", status_info.c_str());
-    String digin_info = "";
-    for (i = 0; i < 8; i++) {
-        digin_info += " ";
-        digin_info += String((digin >> (7 - i)) & 0x01);
-    }
-    this->debug_serial->printf("debug: digin:%s\n", digin_info.c_str());
-    String digout_info = "";
-    for (i = 0; i < 8; i++) {
-        digout_info += " ";
-        digout_info += String((digout >> (7 - i)) & 0x01);
-    }
-    this->debug_serial->printf("debug: digout:%s\n", digout_info.c_str());
-    this->debug_serial->printf("debug: battery: %d compass: %d sonarreadings: %d\n", battery, compass, sonarreadings);
-    this->debug_serial->printf("debug: xpos: %d ypos:%d ptu:%hu timer:%hu\n", xpos, ypos, ptu, timer);
-    this->debug_serial->printf("debug: angle: %d lvel: %d rvel: %d control: %d\n", angle, lvel, rvel, control);
+        Log.verboseln("status: 0x%x analog: %d param_id: %d ", status, analog, param_idx);
+        String status_info = "";
+        for (i = 0; i < 11; i++) {
+            status_info += " ";
+            status_info += String((status >> (7 - i)) & 0x01);
+        }
+        Log.verboseln("status:%s", status_info.c_str());
+        String digin_info = "";
+        for (i = 0; i < 8; i++) {
+            digin_info += " ";
+            digin_info += String((digin >> (7 - i)) & 0x01);
+        }
+        Log.verboseln("digin:%s", digin_info.c_str());
+        String digout_info = "";
+        for (i = 0; i < 8; i++) {
+            digout_info += " ";
+            digout_info += String((digout >> (7 - i)) & 0x01);
+        }
 
-    PrintSonars();
-    PrintArmInfo();
-    PrintArm();
-#endif
+        Log.verboseln("digout:%s", digout_info.c_str());
+        Log.verboseln("battery: %d compass: %d sonarreadings: %d", battery, compass, sonarreadings);
+        Log.verboseln("xpos: %d ypos:%d ptu:%d timer:%d", xpos, ypos, ptu, timer);
+        Log.verboseln("angle: %d lvel: %d rvel: %d control: %d", angle, lvel, rvel, control);
+
+        PrintSonars();
+        PrintArmInfo();
+        PrintArm();
+    }
 }
 
 void SIP::PrintSonars() {
-    if (this->sonarreadings <= 0) {
-        return;
+    if (Log.getLevel() == LOG_LEVEL_VERBOSE) {
+        if (this->sonarreadings <= 0) {
+            return;
+        }
+        String sonar_info;
+        for (int i = 0; i < this->sonarreadings; i++) {
+            sonar_info += " ";
+            sonar_info += static_cast<int>(sonars[i]);
+        }
+        Log.verboseln("Sonars: %s", sonar_info.c_str());
     }
-    String sonar_info;
-    for (int i = 0; i < this->sonarreadings; i++) {
-        sonar_info += " ";
-        sonar_info += static_cast<int>(sonars[i]);
-    }
-    this->debug_serial->printf("debug: Sonars: %s\n", sonar_info.c_str());
 }
 
 void SIP::PrintArm() {
-#ifdef P2OS_DEBUG_PRINT
-    String arm_power_state = (armPowerOn ? "on" : "off");
-    String arm_connected = (armConnected ? "" : "not ");
-    this->debug_serial->printf("debug: Arm power is %s\tArm is %sconnected\n", arm_power_state, arm_connected);
-    this->debug_serial->printf("debug: Arm joint status:\n");
-    for (int ii = 0; ii < 6; ii++) {
-        String arm_moving = (armJointMoving[ii] ? "Moving " : "Stopped");
-        this->debug_serial->printf("debug: Joint %d   %s   %d\n", ii + 1, arm_moving, armJointPos[ii]);
+    if (Log.getLevel() == LOG_LEVEL_VERBOSE) {
+        String arm_power_state = (armPowerOn ? "on" : "off");
+        String arm_connected = (armConnected ? "" : "not ");
+        Log.verboseln("Arm power is %s\tArm is %sconnected", arm_power_state, arm_connected);
+        Log.verboseln("Arm joint status:");
+        for (int ii = 0; ii < 6; ii++) {
+            String arm_moving = (armJointMoving[ii] ? "Moving " : "Stopped");
+            Log.verboseln("Joint %d   %s   %d", ii + 1, arm_moving, armJointPos[ii]);
+        }
+        Log.verboseln("");
     }
-    this->debug_serial->println();
-#endif
 }
 
 void SIP::PrintArmInfo() {
-#ifdef P2OS_DEBUG_PRINT
-    this->debug_serial->printf("debug: Arm version:\t%s\n", armVersionString);
-    this->debug_serial->printf("debug: Arm has %d joints:\n", armNumJoints);
-    this->debug_serial->printf("debug:  |\tSpeed\tHome\tMin\tCentre\tMax\tTicks/90\n");
-    for (int ii = 0; ii < armNumJoints; ii++) {
-        this->debug_serial->printf(
-            "%d |\t%d\t%d\t%d\t%d\t%d\t%d\n", ii, armJoints[ii].speed, armJoints[ii].home, armJoints[ii].min,
-            armJoints[ii].centre, armJoints[ii].max, armJoints[ii].ticksPer90
-        );
+    if (Log.getLevel() == LOG_LEVEL_VERBOSE) {
+        Log.verboseln("Arm version:\t%s", armVersionString);
+        Log.verboseln("Arm has %d joints:", armNumJoints);
+        Log.verboseln("|\tSpeed\tHome\tMin\tCentre\tMax\tTicks/90");
+        Log.setShowLevel(false);
+        for (int ii = 0; ii < armNumJoints; ii++) {
+            Log.verboseln(
+                "%d |\t%d\t%d\t%d\t%d\t%d\t%d", ii, armJoints[ii].speed, armJoints[ii].home, armJoints[ii].min,
+                armJoints[ii].centre, armJoints[ii].max, armJoints[ii].ticksPer90
+            );
+        }
+        Log.setShowLevel(true);
     }
-#endif
 }
 
 void SIP::ParseStandard(unsigned char* buffer) {
@@ -311,9 +317,7 @@ void SIP::ParseStandard(unsigned char* buffer) {
     if (xpos != INT_MAX) {
         change = static_cast<int>(rint(PositionChange(rawxpos, newxpos) * PlayerRobotParams[param_idx].DistConvFactor));
         if (abs(change) > 100) {
-#ifdef P2OS_ERROR_PRINT
-            this->debug_serial->printf("error: invalid odometry change [%d]; odometry values are tainted\n", change);
-#endif
+            Log.errorln("invalid odometry change [%d]; odometry values are tainted", change);
         } else {
             xpos += change;
         }
@@ -328,9 +332,7 @@ void SIP::ParseStandard(unsigned char* buffer) {
     if (ypos != INT_MAX) {
         change = static_cast<int>(rint(PositionChange(rawypos, newypos) * PlayerRobotParams[param_idx].DistConvFactor));
         if (abs(change) > 100) {
-#ifdef P2OS_ERROR_PRINT
-            this->debug_serial->printf("error: invalid odometry change [%d]; odometry values are tainted\n", change);
-#endif
+            Log.errorln("invalid odometry change [%d]; odometry values are tainted\n", change);
         } else {
             ypos += change;
         }
@@ -355,9 +357,7 @@ void SIP::ParseStandard(unsigned char* buffer) {
 
     battery = buffer[cnt];
     cnt += sizeof(unsigned char);
-#ifdef P2OS_DEBUG_PRINT
-    this->debug_serial->printf("debug: battery value: %d\n", battery);
-#endif
+    Log.verboseln("battery value: %d", battery);
 
     lwstall = buffer[cnt] & 0x01;
     rearbumpers = buffer[cnt] >> 1;
@@ -445,10 +445,8 @@ void SIP::ParseStandard(unsigned char* buffer) {
 void SIP::ParseSERAUX(unsigned char* buffer) {
     unsigned char type = buffer[1];
     if (type != SERAUX && type != SERAUX2) {
-// Really should never get here...
-#ifdef P2OS_DEBUG_PRINT
-        this->debug_serial->printf("debug: Attempt to parse non SERAUX packet as serial data.\n");
-#endif
+        // Really should never get here...
+        Log.verboseln("Attempt to parse non SERAUX packet as serial data.");
         return;
     }
 
@@ -468,23 +466,18 @@ void SIP::ParseSERAUX(unsigned char* buffer) {
         }
     }
     if (len < 10 || ix > len - 8) {
-#ifdef P2OS_DEBUG_PRINT
-        this->debug_serial->printf("debug: Failed to get a full blob tracking packet.\n");
-#endif
+        Log.verboseln("Failed to get a full blob tracking packet.\n");
         return;
     }
 
     // There is a special 'S' message containing the tracking color info
     if (buffer[ix + 1] == 'S') {
-// Color information (track color)
-#ifdef P2OS_DEBUG_PRINT
-        this->debug_serial->printf(
+        // Color information (track color)
+        Log.verboseln(
             "Tracking color (RGB):  %d %d %d\n"
-            "       with variance:  %d %d %d\n",
+            "       with variance:  %d %d %d",
             buffer[ix + 2], buffer[ix + 3], buffer[ix + 4], buffer[ix + 5], buffer[ix + 6], buffer[ix + 7]
         );
-        blobcolor = buffer[ix + 2] << 16 | buffer[ix + 3] << 8 | buffer[ix + 4];
-#endif
         return;
     }
 
@@ -502,10 +495,7 @@ void SIP::ParseSERAUX(unsigned char* buffer) {
         blobarea = (bloby2 - bloby1 + 1) * (blobx2 - blobx1 + 1) * blobconf / 255;
         return;
     }
-
-#ifdef P2OS_DEBUG_PRINT
-    this->debug_serial->printf("debug: Unknown blob tracker packet type: %c\n", buffer[ix + 1]);
-#endif
+    Log.verboseln("Unknown blob tracker packet type: %c", buffer[ix + 1]);
 }
 
 // Parse a set of gyro measurements.  The buffer is formatted thusly:
@@ -521,17 +511,13 @@ void SIP::ParseGyro(unsigned char* buffer) {
 
     unsigned char type = buffer[1];
     if (type != GYROPAC) {
-// Really should never get here...
-#ifdef P2OS_DEBUG_PRINT
-        this->debug_serial->printf("debug: Attempt to parse non GYRO packet as gyro data.\n");
-#endif
+        // Really should never get here...
+        Log.verboseln("Attempt to parse non GYRO packet as gyro data.");
         return;
     }
 
     if (len < 1) {
-#ifdef P2OS_DEBUG_PRINT
-        this->debug_serial->printf("debug: Couldn't get gyro measurement count\n");
-#endif
+        Log.verboseln("Couldn't get gyro measurement count");
         return;
     }
 
@@ -540,9 +526,7 @@ void SIP::ParseGyro(unsigned char* buffer) {
 
     // sanity check
     if ((len - 1) != (count * 3)) {
-#ifdef P2OS_DEBUG_PRINT
-        this->debug_serial->printf("debug: Mismatch between gyro measurement count and packet length\n");
-#endif
+        Log.verboseln("Mismatch between gyro measurement count and packet length");
         return;
     }
 
@@ -572,16 +556,12 @@ void SIP::ParseArm(unsigned char* buffer) {
     int length = static_cast<int>(buffer[0]) - 2;
 
     if (buffer[1] != ARMPAC) {
-#ifdef P2OS_DEBUG_PRINT
-        this->debug_serial->printf("debug: Attempt to parse a non ARM packet as arm data.\n");
-#endif
+        Log.verboseln("Attempt to parse a non ARM packet as arm data.");
         return;
     }
 
     if (length < 1 || length != 9) {
-#ifdef P2OS_DEBUG_PRINT
-        this->debug_serial->printf("debug: ARMpac length incorrect size\n");
-#endif
+        Log.verboseln("ARMpac length incorrect size");
         return;
     }
 
@@ -615,16 +595,12 @@ void SIP::ParseArm(unsigned char* buffer) {
 void SIP::ParseArmInfo(unsigned char* buffer) {
     int length = static_cast<int>(buffer[0]) - 2;
     if (buffer[1] != ARMINFOPAC) {
-#ifdef P2OS_ERROR_PRINT
-        this->debug_serial->printf("error: Attempt to parse a non ARMINFO packet as arm info.\n");
-#endif
+        Log.errorln("Attempt to parse a non ARMINFO packet as arm info.");
         return;
     }
 
     if (length < 1) {
-#ifdef P2OS_DEBUG_PRINT
-        this->debug_serial->printf("debug: ARMINFOpac length bad size\n");
-#endif
+        Log.verboseln("ARMINFOpac: length bad size");
         return;
     }
 
