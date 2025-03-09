@@ -331,7 +331,7 @@ void SIP::ParseStandard(unsigned char* buffer) {
     if (ypos != INT_MAX) {
         change = static_cast<int>(rint(PositionChange(rawypos, newypos) * PlayerRobotParams[param_idx].DistConvFactor));
         if (abs(change) > 100) {
-            Log.errorln("invalid odometry change [%d]; odometry values are tainted\n", change);
+            Log.errorln("invalid odometry change [%d]; odometry values are tainted", change);
         } else {
             ypos += change;
         }
@@ -428,8 +428,8 @@ void SIP::ParseStandard(unsigned char* buffer) {
     digout = buffer[cnt];
     cnt += sizeof(unsigned char);
     // for debugging:
-    Print();
-    // PrintSonars();
+    // this->Print();
+    // this->PrintSonars();
 }
 
 /** Parse a SERAUX SIP packet.  For a CMUcam, this will have blob

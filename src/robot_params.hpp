@@ -13,11 +13,10 @@ void initialize_robot_params();
 #define MOTOR_DEF_MAX_TURNSPEED DTOR(100)
 
 /*
- * Apparently, newer kernel require a large value (200000) here.  It only
- * makes the initialization phase take a bit longer, and doesn't have any
+ * Time translated from the real p2os library and doesn't have any
  * impact on the speed at which packets are received from P2OS
  */
-#define P2OS_CYCLETIME_USEC 200000
+#define P2OS_CYCLETIME_USEC 200
 
 /* p2os constants */
 

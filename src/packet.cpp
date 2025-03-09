@@ -63,32 +63,30 @@ int P2OSPacket::CalcChkSum() {
 }
 
 int P2OSPacket::Receive() {
-    unsigned char prefix[3];
+    unsigned char new_prefix[3];
     int           cnt;
 
     ::memset(this->packet, 0, sizeof(this->packet));
 
     do {
-        ::memset(prefix, 0, sizeof(prefix));
+        ::memset(new_prefix, 0, sizeof(new_prefix));
 
         int retries_0 = 100;
         while (1) {
             cnt = 0;
-            int retries_1 = 50;
-            int read_result;
+            int retries_1 = 100;
             while (cnt != 1 && retries_1 > 0) {
                 if (this->pioneer_serial->available()) {
-                    read_result = this->pioneer_serial->read(&prefix[2], 1);
-                    cnt += read_result;
+                    cnt += this->pioneer_serial->read(&new_prefix[2], 1);;
                     if (cnt < 0) {
-                        Log.errorln("error reading packet.header from robot connection: P2OSPacket():Receive():read():"
+                        Log.errorln(
+                            "error reading packet.header from robot connection: P2OSPacket():Receive():read():"
                         );
                         return 1;
                     }
                 } else {
-                    // retries_1--;
-                    cnt = 0;
-                    if (retries_1 < 1) {
+                    retries_1--;
+                    if (retries_1 < 0) {
                         Log.errorln(
                             "P2OSPacket():Receive():read(): timout reading packet.header from robot connection: "
                         );
@@ -97,11 +95,12 @@ int P2OSPacket::Receive() {
                 }
             }
 
-            if (prefix[0] == 0xFA && prefix[1] == 0xFB) {
+            if (new_prefix[0] == 0xFA && new_prefix[1] == 0xFB) {
                 break;
             }
-            prefix[0] = prefix[1];
-            prefix[1] = prefix[2];
+
+            new_prefix[0] = new_prefix[1];
+            new_prefix[1] = new_prefix[2];
             // skipped++;
 
             retries_0--;
@@ -112,14 +111,13 @@ int P2OSPacket::Receive() {
         }
         // // if (skipped>3) ROS_INFO("Skipped %d bytes\n", skipped);
 
-        this->size = prefix[2] + 3;
-        memcpy(this->packet, prefix, 3);
+        this->size = new_prefix[2] + 3;
+        memcpy(this->packet, new_prefix, 3);
 
         cnt = 0;
-        while (cnt != prefix[2]) {
+        while (cnt != new_prefix[2]) {
             if (this->pioneer_serial->available()) {
-                int read_result = this->pioneer_serial->read(&packet[3 + cnt], prefix[2] - cnt);
-                cnt += read_result;
+                cnt += this->pioneer_serial->read(&packet[3 + cnt], new_prefix[2] - cnt);
 
                 if (cnt < 0) {
                     Log.errorln("Error reading packet body from robot connection: P2OSPacket():Receive():read():");
@@ -129,8 +127,8 @@ int P2OSPacket::Receive() {
                 Log.verboseln("reading packet.body from robot connection: P2OSPacket():Receive():read():");
             }
         }
-        Log.verboseln("Received:");
-        this->PrintHex();
+        // Log.verboseln("Received:");
+        // this->PrintHex();
     } while (!Check());
 
     return 0;
@@ -169,8 +167,7 @@ int P2OSPacket::Send() {
 
     while (cnt != this->size) {
         if (this->pioneer_serial->availableForWrite()) {
-            int read_result = this->pioneer_serial->write(this->packet, this->size);
-            cnt += read_result;
+            cnt += this->pioneer_serial->write(this->packet, this->size);
             if (cnt < 0) {
                 Log.errorln("Send");
                 return 1;
@@ -181,7 +178,7 @@ int P2OSPacket::Send() {
     }
     this->pioneer_serial->flush(true);
 
-    Log.verboseln("Sent:");
-    this->Print();
+    // Log.verboseln("Sent:");
+    // this->Print();
     return 0;
 }

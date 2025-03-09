@@ -197,12 +197,13 @@ int P2OSCommunication::Setup() {
             ;
     }
 
-    this->pioneer_serial->updateBaudRate(bauds[currbaud]);
+    this->pioneer_serial->begin(bauds[currbaud], SERIAL_8N1);
+    this->pioneer_serial->flush();
+
     Log.infoln("P2OS connection serial with baudrate %i...", bauds[currbaud]);
+
     packet->set_pioneer_serial(*(this->pioneer_serial));
     receivedpacket->set_pioneer_serial(*(this->pioneer_serial));
-
-    this->pioneer_serial->flush();
 
     int num_sync_attempts = 3;
     while (psos_state != READY) {
@@ -212,38 +213,34 @@ int P2OSCommunication::Setup() {
                 command = SYNC0;
                 packet->Build(&command, 1);
                 packet->Send();
-                delay(200);  // delayMicroseconds(P2OS_CYCLETIME_USEC);
+                delay(P2OS_CYCLETIME_USEC);  // delayMicroseconds(P2OS_CYCLETIME_USEC);
                 break;
             case AFTER_FIRST_SYNC:
                 Log.traceln("AFTER_FIRST_SYNC");
-                Log.traceln("Info: turning off NONBLOCK mode...");
-                // if (!this->pioneer_serial->available()) {
-                //     this->debug_serial->println("Error: P2OS::Setup():fcntl()");
-                //     this->psos_fd = -1;
-                //     return 1;
-                // }
+                Log.infoln("Turning off NONBLOCK mode...");
                 command = SYNC1;
                 packet->Build(&command, 1);
                 packet->Send();
-                delay(200);  // delayMicroseconds(P2OS_CYCLETIME_USEC);
+                delay(P2OS_CYCLETIME_USEC);  // delayMicroseconds(P2OS_CYCLETIME_USEC);
                 break;
             case AFTER_SECOND_SYNC:
                 Log.traceln("AFTER_SECOND_SYNC");
                 command = SYNC2;
                 packet->Build(&command, 1);
                 packet->Send();
-                delay(200);
+                delay(P2OS_CYCLETIME_USEC);
                 break;
             default:
-                Log.traceln("P2OS::Setup():shouldn't be here...");
+                Log.warningln("P2OS::Setup():shouldn't be here...");
                 break;
         }
-        delay(200);  // delayMicroseconds(P2OS_CYCLETIME_USEC);
+
+        delay(P2OS_CYCLETIME_USEC);  // delayMicroseconds(P2OS_CYCLETIME_USEC);
 
         if (receivedpacket->Receive()) {
             if ((psos_state == NO_SYNC) && (num_sync_attempts >= 0)) {
                 num_sync_attempts--;
-                delay(200);  // delayMicroseconds(P2OS_CYCLETIME_USEC);
+                delay(P2OS_CYCLETIME_USEC);  // delayMicroseconds(P2OS_CYCLETIME_USEC);
                 continue;
             } else {
                 if (++currbaud < numbauds) {
@@ -256,7 +253,7 @@ int P2OSCommunication::Setup() {
                     num_sync_attempts = 3;
                     continue;
                 } else {
-                    // tried all speeds; bail
+                    Log.warningln("P2OS tried all speeds; bail");
                     break;
                 }
             }
@@ -281,17 +278,18 @@ int P2OSCommunication::Setup() {
                 Log.traceln("switch (receivedpacket->packet[3]) default state");
                 if (!sent_close) {
                     Log.verboseln("sending CLOSE");
-                    command = CLOSE;
-                    packet->Build(&command, 1);
-                    packet->Send();
+                    this->Shutdown();
                     sent_close = true;
-                    delay(2 * 200);  // delayMicroseconds(2*P2OS_CYCLETIME_USEC);
+                    delay(2 * P2OS_CYCLETIME_USEC);  // delayMicroseconds(2*P2OS_CYCLETIME_USEC);
                     this->pioneer_serial->flush();
+                    psos_state = NO_SYNC;
+                    break;
                 }
+                this->pioneer_serial->flush();
                 psos_state = NO_SYNC;
                 break;
         }
-        delay(200);  // delayMicroseconds(P2OS_CYCLETIME_USEC);
+        delay(P2OS_CYCLETIME_USEC);  // delayMicroseconds(P2OS_CYCLETIME_USEC);
     }
 
     if (psos_state != READY) {
@@ -319,13 +317,13 @@ int P2OSCommunication::Setup() {
     command = OPEN;
     packet->Build(&command, 1);
     packet->Send();
-    delay(200);  // delayMicroseconds(P2OS_CYCLETIME_USEC);
+    delay(P2OS_CYCLETIME_USEC);  // delayMicroseconds(P2OS_CYCLETIME_USEC);
     command = PULSE;
     packet->Build(&command, 1);
     packet->Send();
-    delay(200);  // delayMicroseconds(P2OS_CYCLETIME_USEC);
-
-    Log.infoln("-> Connected to:\n  name: %s, type: %s, subtype: %s", name, type, subtype);
+    delay(P2OS_CYCLETIME_USEC);  // delayMicroseconds(P2OS_CYCLETIME_USEC);
+    
+    Log.infoln("Done\n-> Connected to:\n  name: %s, type: %s, subtype: %s", name, type, subtype);
     // now, based on robot type, find the right set of parameters
     for (i = 0; i < PLAYER_NUM_ROBOT_TYPES; i++) {
         if (!strcasecmp(PlayerRobotParams[i].Class.c_str(), type) &&
@@ -336,8 +334,8 @@ int P2OSCommunication::Setup() {
         }
     }
     if (i == PLAYER_NUM_ROBOT_TYPES) {
-        Log.infoln("P2OS: Warning: couldn't find parameters for this robot");
-        Log.infoln("using defaults");
+        Log.warningln("P2OS: Warning: couldn't find parameters for this robot");
+        Log.warningln("using defaults");
         param_idx = 0;
     }
 
@@ -473,12 +471,12 @@ int P2OSCommunication::Shutdown() {
     command[0] = STOP;
     packet_shutdown->Build(command, 1);
     packet_shutdown->Send();
-    delay(200);  // usleep(P2OS_CYCLETIME_USEC);
+    delay(P2OS_CYCLETIME_USEC);  // usleep(P2OS_CYCLETIME_USEC);
 
     command[0] = CLOSE;
     packet_shutdown->Build(command, 1);
     packet_shutdown->Send();
-    delay(200);  // usleep(P2OS_CYCLETIME_USEC);
+    delay(P2OS_CYCLETIME_USEC);  // usleep(P2OS_CYCLETIME_USEC);
 
     // close(this->psos_fd);
     // this->psos_fd = -1;
@@ -487,6 +485,10 @@ int P2OSCommunication::Shutdown() {
     this->sippacket = NULL;
 
     delete packet_shutdown;
+
+    this->pioneer_serial->flush();
+    this->pioneer_serial->end();
+
     return 0;
 }
 
