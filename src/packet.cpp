@@ -105,7 +105,7 @@ int P2OSPacket::Receive() {
 
             retries_0--;
             if (retries_0 < 0) {
-                Log.errorln("timout retried: P2OSPacket():Receive():read():");
+                Log.errorln("timeout retried: P2OSPacket():Receive():read():");
                 return 1;
             }
         }

@@ -2,9 +2,6 @@
 #include <HardwareSerial.h>
 #include <ArduinoLog.h>
 
-#define PIONEER_SERIAL_RX 16
-#define PIONEER_SERIAL_TX 17
-
 HardwareSerial debug_serial(0);    // define a Serial for UART0
 HardwareSerial pioneer_serial(2);  // define a Serial for UART2
 
@@ -12,9 +9,7 @@ P2OS* p2os;
 
 void setup() {
     debug_serial.begin(9600);
-    pioneer_serial.begin(9600, SERIAL_8N1, PIONEER_SERIAL_RX, PIONEER_SERIAL_TX);
     debug_serial.flush();
-    pioneer_serial.flush();
 
     Log.begin(LOG_LEVEL_INFO, &debug_serial);
 
