@@ -34,6 +34,21 @@ If you are using arduino ide, install the package from the packages available in
 
 ![P2OS Arduino UML](./docs/diagramas-test_setup-pioneer_2dx_interface-p2os_comm-Complete.drawio.png)
 
+- **p2os**: Class responsible for performing the entire P2OS communication. It includes methods for startup, shutdown, handling main loop operations, retrieving robot data, and sending velocity and motor state formatted for the robot.
+
+- **p2os_comm**: Class responsible for encapsulating parameters, settings, and helper methods to perform the entire P2OS communication protocol correctly. This class is
+
+
+- **packet**: Class responsible for building messages (adding headers and checksums), verifying received messages, receiving messages from the Pioneer 2DX, and sending messages to the Pioneer 2DX.
+
+- **sip**: Class responsible for processing and managing data exchanged with a robot, such as separating the data into different types of variables and filtering out incorrect data.
+
+- **robot_params**: File responsible for managing all Pioneer robot type configurations, like the distance between wheels, available commands, number of ultrasonic sensors etc.
+
+- **p2os_config**: File responsible for maintaining all the P2OS protocol configurations.
+
+- **p2os_msgs**: File responsible for defining all message types used throughout the P2OS protocol.
+
 ## 🎨 Format
 
 The project uses `clang-format` to format files, there is a `.clang-format` with the formatting rules for the project. To install it, on Ubuntu, run the following command on the terminal:
