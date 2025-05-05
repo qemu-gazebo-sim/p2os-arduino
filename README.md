@@ -10,6 +10,11 @@ If you want to undertand how this protocol works, check the file [p2os_overview.
 
 ## 🚀 Implementation example
 
+Here I used the library to control the robot with my ps5 controller
+
+https://github.com/user-attachments/assets/fecde3bc-d142-4da1-b995-2ee2f2d35c52
+
+The video can also be viewed on youtube [here](https://www.youtube.com/watch?v=dj5ICpfwBbw)
 
 ## ⚡ Quick Start
 
