@@ -36,8 +36,7 @@ If you are using arduino ide, install the package from the packages available in
 
 - **p2os**: Class responsible for performing the entire P2OS communication. It includes methods for startup, shutdown, handling main loop operations, retrieving robot data, and sending velocity and motor state formatted for the robot.
 
-- **p2os_comm**: Class responsible for encapsulating parameters, settings, and helper methods to perform the entire P2OS communication protocol correctly. This class is
-
+- **p2os_comm**: Class responsible for encapsulating parameters, settings, and helper methods to perform the entire P2OS communication protocol correctly. This class is also responsible for managing the entire finite state machine required to connect with the robot.
 
 - **packet**: Class responsible for building messages (adding headers and checksums), verifying received messages, receiving messages from the Pioneer 2DX, and sending messages to the Pioneer 2DX.
 
