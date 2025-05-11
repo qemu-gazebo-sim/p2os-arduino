@@ -18,7 +18,7 @@
 - This is a standard RS232 serial port, usually used for rs232 serial communication.
 - RS232 signals are typically ±12V (vs. TTL's 0–5V or 0–3.3V).
 
-4. Pioneer Robot (Pioner 1, Pioner 2)
+4. Pioneer Robot (Pioneer 1, Pioneer 2)
 - The robot communicates via a DB9 RS232 interface.
 - It uses the P2OS protocol (a message-based protocol) to send and receive commands/data.
 - Expects the RS232 voltage levels.
