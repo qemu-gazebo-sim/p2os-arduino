@@ -22,3 +22,11 @@ Once the connection is established:
 - It receives data regarding the actuators.
 
 To maintain the connection with the robot, a `pulse` command must be sent at least every **2 seconds**.
+
+### P2OS Commands Packet
+
+The P2OS protocol has a structured command format for receiving and responding to instructions from a device. It is possible to observe the whole command packet structure in the table.
+
+![p2os client command packet](./docs/p2os-client-command-packet.png)
+
+Following that structure, if it is necessary to send a command "0" (which corresponds to the SYNC0 command), the complete packet will be "0xFA 0xFB 0x03 0x00 0x00 0x00". If it is necessary to send a command "1" (which corresponds to the SYNC1 command), the complete packet will be "0xFA 0xFB 0x03 0x01 0x00 0x01".
