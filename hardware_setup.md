@@ -1,6 +1,6 @@
 ## What is necessary to use it with the robot?
 
-![hardware_setup](./docs/diagramas-test_setup-hardware.drawio.png)
+![Hardware setup](./docs/diagramas-test_setup-hardware.drawio.png)
 
 
 1. Microcontroller (Arduino / ESP32 / etc)
